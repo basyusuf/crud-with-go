@@ -1,13 +1,14 @@
 package routers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-func InitializeRouters(router *mux.Router) {
+func InitializeRouters(router *mux.Router, port string) {
 	UserRouters(router)
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), router))
 }
