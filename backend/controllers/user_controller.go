@@ -3,7 +3,6 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"main/database"
 	"main/helper"
@@ -31,7 +30,7 @@ func GetAllUser(writer http.ResponseWriter, req *http.Request) {
 		json.NewEncoder(writer).Encode(errorResponse)
 	} else {
 		writer.WriteHeader(http.StatusOK)
-		json.NewEncoder(writer).Encode(users)
+		json.NewEncoder(writer).Encode(models.UserList.UserArrayToPublic(users))
 	}
 }
 
@@ -44,7 +43,7 @@ func GetUserById(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	if ormResult.RowsAffected != 0 && ormResult.Error == nil {
 		writer.WriteHeader(http.StatusOK)
-		json.NewEncoder(writer).Encode(user)
+		json.NewEncoder(writer).Encode(user.ToPublic())
 	} else {
 		if errors.Is(ormResult.Error, gorm.ErrRecordNotFound) {
 			writer.WriteHeader(http.StatusNotFound)
@@ -64,9 +63,7 @@ func CreateUser(writer http.ResponseWriter, req *http.Request) {
 	var user models.User
 	var errorResponse helper.ErrorResponse
 	json.Unmarshal(requestBody, &user)
-	fmt.Println(user)
 	validateStatus := user.ValidateFor("create")
-	fmt.Println(validateStatus)
 	if validateStatus != nil {
 		errorResponse.Error = "Bad request"
 		writer.WriteHeader(400)
@@ -86,7 +83,7 @@ func CreateUser(writer http.ResponseWriter, req *http.Request) {
 			json.NewEncoder(writer).Encode(errorResponse)
 		} else {
 			writer.WriteHeader(http.StatusCreated)
-			json.NewEncoder(writer).Encode(user)
+			json.NewEncoder(writer).Encode(user.ToPublic())
 		}
 	}
 
@@ -97,7 +94,6 @@ func UpdateUser(writer http.ResponseWriter, req *http.Request) {
 	var errorResponse helper.ErrorResponse
 	var user models.User
 	ormResult := database.DatabaseConnector.First(&user, id)
-	fmt.Println(ormResult.Error)
 	writer.Header().Set("Content-Type", "application/json")
 	if ormResult.Error == nil {
 		//We don't use User Entity because update service have optional field
@@ -118,7 +114,7 @@ func UpdateUser(writer http.ResponseWriter, req *http.Request) {
 			json.NewEncoder(writer).Encode(errorResponse)
 		} else {
 			writer.WriteHeader(http.StatusCreated)
-			json.NewEncoder(writer).Encode(user)
+			json.NewEncoder(writer).Encode(user.ToPublic())
 		}
 	} else {
 		if errors.Is(ormResult.Error, gorm.ErrRecordNotFound) {
