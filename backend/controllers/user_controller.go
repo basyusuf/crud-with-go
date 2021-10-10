@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"main/database"
 	"main/helper"
@@ -57,36 +58,107 @@ func GetUserById(writer http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func CreateUser(writer http.ResponseWriter, res *http.Request) {
-	requestBody, _ := ioutil.ReadAll(res.Body)
+func CreateUser(writer http.ResponseWriter, req *http.Request) {
+	requestBody, _ := ioutil.ReadAll(req.Body)
 	writer.Header().Set("Content-Type", "application/json")
 	var user models.User
 	var errorResponse helper.ErrorResponse
 	json.Unmarshal(requestBody, &user)
-	password, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
-	user.Password = string(password)
-	createError := database.DatabaseConnector.Create(&user).Error
-	if createError != nil {
-		var perr *pgconn.PgError
-		errors.As(createError, &perr)
-		if perr.Code == "23505" {
-			errorResponse.Error = "User with that email already exists"
-			writer.WriteHeader(403)
-		} else {
-			errorResponse.Error = "Bad request"
-			writer.WriteHeader(400)
-		}
+	fmt.Println(user)
+	validateStatus := user.ValidateFor("create")
+	fmt.Println(validateStatus)
+	if validateStatus != nil {
+		errorResponse.Error = "Bad request"
+		writer.WriteHeader(400)
 		json.NewEncoder(writer).Encode(errorResponse)
 	} else {
-		writer.WriteHeader(http.StatusCreated)
-		json.NewEncoder(writer).Encode(user)
+		createError := database.DatabaseConnector.Create(&user).Error
+		if createError != nil {
+			var perr *pgconn.PgError
+			errors.As(createError, &perr)
+			if perr.Code == "23505" {
+				errorResponse.Error = "User with that email already exists"
+				writer.WriteHeader(403)
+			} else {
+				errorResponse.Error = "Bad request"
+				writer.WriteHeader(400)
+			}
+			json.NewEncoder(writer).Encode(errorResponse)
+		} else {
+			writer.WriteHeader(http.StatusCreated)
+			json.NewEncoder(writer).Encode(user)
+		}
 	}
-}
-
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
+func UpdateUser(writer http.ResponseWriter, req *http.Request) {
+	id := mux.Vars(req)["id"]
+	var errorResponse helper.ErrorResponse
+	var user models.User
+	ormResult := database.DatabaseConnector.First(&user, id)
+	fmt.Println(ormResult.Error)
+	writer.Header().Set("Content-Type", "application/json")
+	if ormResult.Error == nil {
+		//We don't use User Entity because update service have optional field
+		m := make(map[string]string)
+		requestBody, _ := ioutil.ReadAll(req.Body)
+		json.Unmarshal(requestBody, &m)
+		if m["password"] != "" {
+			password, _ := bcrypt.GenerateFromPassword([]byte(m["password"]), 10)
+			user.Password = string(password)
+		}
+		if m["name"] != "" {
+			user.Name = m["name"]
+		}
+		updateResult := database.DatabaseConnector.Save(&user)
+		if updateResult.Error != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			errorResponse.Error = "Bad request"
+			json.NewEncoder(writer).Encode(errorResponse)
+		} else {
+			writer.WriteHeader(http.StatusCreated)
+			json.NewEncoder(writer).Encode(user)
+		}
+	} else {
+		if errors.Is(ormResult.Error, gorm.ErrRecordNotFound) {
+			writer.WriteHeader(http.StatusNotFound)
+			errorResponse.Error = "User with that id does not exist"
+			json.NewEncoder(writer).Encode(errorResponse)
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+			errorResponse.Error = "Bad request"
+			json.NewEncoder(writer).Encode(errorResponse)
+		}
+	}
+
+}
+
+func DeleteUser(writer http.ResponseWriter, req *http.Request) {
+	id := mux.Vars(req)["id"]
+	var errorResponse helper.ErrorResponse
+	var user models.User
+	writer.Header().Set("Content-Type", "application/json")
+	ormResult := database.DatabaseConnector.First(&user, id)
+	if ormResult.Error == nil {
+		deleteResult := database.DatabaseConnector.Delete(&user, id)
+		if deleteResult.Error == nil && deleteResult.RowsAffected == 1 {
+			writer.WriteHeader(http.StatusOK)
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+			errorResponse.Error = "Bad request"
+			json.NewEncoder(writer).Encode(errorResponse)
+		}
+	} else {
+		if errors.Is(ormResult.Error, gorm.ErrRecordNotFound) {
+			writer.WriteHeader(http.StatusNotFound)
+			errorResponse.Error = "User with that id does not exist"
+			json.NewEncoder(writer).Encode(errorResponse)
+		} else {
+			writer.WriteHeader(http.StatusBadRequest)
+			errorResponse.Error = "Bad request"
+			json.NewEncoder(writer).Encode(errorResponse)
+		}
+	}
 
 }
