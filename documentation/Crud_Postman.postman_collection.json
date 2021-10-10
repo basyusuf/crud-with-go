@@ -11,11 +11,11 @@
 				{
 					"name": "Create User",
 					"request": {
-						"method": "POST",
+						"method": "PUT",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Test\",\n    \"password\": \"securepasswd\",\n    \"email\": \"test@example.com\"\n}",
+							"raw": "{\n    \"name\": \"Test\",\n    \"password\": \"securepasswd\",\n    \"email\": \"test3@example.com\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -84,13 +84,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{BASE_URL}}/users/5",
+							"raw": "{{BASE_URL}}/users/1",
 							"host": [
 								"{{BASE_URL}}"
 							],
 							"path": [
 								"users",
-								"5"
+								"1"
 							]
 						}
 					},
