@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"main/app"
-	"strings"
 
 	"github.com/badoux/checkmail"
 	"golang.org/x/crypto/bcrypt"
@@ -15,7 +14,7 @@ type User struct {
 	ID       uint   `gorm:"primaryKey"`
 	Name     string `json:"name" gorm:"not null"`
 	Email    string `json:"email" gorm:"unique;not null"`
-	Password string `json:"password,omitempty" gorm:"not null"`
+	Password string `json:"password" gorm:"not null"`
 	Status   bool   `json:"-" gorm:"default:true"`
 }
 
@@ -42,9 +41,10 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	u.Password = string(password)
 	return
 }
-func (u *User) ValidateFor(action string) error {
-	switch strings.ToLower(action) {
-	case "create":
+
+func (u *User) ValidateFor(action ValidationActionType) error {
+	switch action {
+	case ValidationStatus.CREATE:
 		if u.Name == "" {
 			return errors.New("required name")
 		}
@@ -56,6 +56,19 @@ func (u *User) ValidateFor(action string) error {
 		}
 		if err := checkmail.ValidateFormat(u.Email); err != nil {
 			return errors.New("invalid email")
+		}
+		return nil
+
+	case ValidationStatus.UPDATE:
+		updateFlag := false
+		if u.Name != "" {
+			updateFlag = true
+		}
+		if u.Password != "" {
+			updateFlag = true
+		}
+		if !updateFlag {
+			return errors.New("required any field for update")
 		}
 		return nil
 

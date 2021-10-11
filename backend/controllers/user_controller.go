@@ -39,6 +39,7 @@ func GetUserById(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	var errorResponse app.ErrorResponse
 	var user models.User
+	//check if there is such a user in the database
 	ormResult := database.DatabaseConnector.First(&user, id)
 	if ormResult.RowsAffected != 0 && ormResult.Error == nil {
 		writer.WriteHeader(http.StatusOK)
@@ -63,10 +64,10 @@ func CreateUser(writer http.ResponseWriter, req *http.Request) {
 	var errorResponse app.ErrorResponse
 	json.Unmarshal(requestBody, &user)
 	//Input validation for create
-	validateStatus := user.ValidateFor("create")
+	validateStatus := user.ValidateFor(models.ValidationStatus.CREATE)
 	if validateStatus != nil {
 		errorResponse.Error = "Bad request"
-		writer.WriteHeader(400)
+		writer.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(writer).Encode(errorResponse)
 		return
 	}
@@ -74,7 +75,7 @@ func CreateUser(writer http.ResponseWriter, req *http.Request) {
 	checkEmailOnDB := database.DatabaseConnector.First(&user, "email = ?", user.Email)
 	if checkEmailOnDB.RowsAffected != 0 {
 		errorResponse.Error = "User with that email already exists"
-		writer.WriteHeader(403)
+		writer.WriteHeader(http.StatusForbidden)
 		json.NewEncoder(writer).Encode(errorResponse)
 		return
 	}
@@ -84,10 +85,10 @@ func CreateUser(writer http.ResponseWriter, req *http.Request) {
 		errors.As(createError, &perr)
 		if perr.Code == "23505" {
 			errorResponse.Error = "User with that email already exists"
-			writer.WriteHeader(403)
+			writer.WriteHeader(http.StatusForbidden)
 		} else {
 			errorResponse.Error = "Bad request"
-			writer.WriteHeader(400)
+			writer.WriteHeader(http.StatusBadRequest)
 		}
 		json.NewEncoder(writer).Encode(errorResponse)
 	} else {
@@ -101,11 +102,20 @@ func UpdateUser(writer http.ResponseWriter, req *http.Request) {
 	var errorResponse app.ErrorResponse
 	id := mux.Vars(req)["id"]
 	var user models.User
+	//check if there is such a user in the database
 	ormResult := database.DatabaseConnector.First(&user, id)
 	if ormResult.Error == nil {
 		var bodyUser models.User
 		requestBody, _ := ioutil.ReadAll(req.Body)
 		json.Unmarshal(requestBody, &bodyUser)
+		//check the request body have a any field for update
+		updateValidationError := bodyUser.ValidateFor(models.ValidationStatus.UPDATE)
+		if updateValidationError != nil {
+			writer.WriteHeader(http.StatusBadRequest)
+			errorResponse.Error = "Bad request"
+			json.NewEncoder(writer).Encode(errorResponse)
+			return
+		}
 		if bodyUser.Password != "" {
 			password, _ := bcrypt.GenerateFromPassword([]byte(bodyUser.Password), 10)
 			user.Password = string(password)
@@ -141,6 +151,7 @@ func DeleteUser(writer http.ResponseWriter, req *http.Request) {
 	id := mux.Vars(req)["id"]
 	var errorResponse app.ErrorResponse
 	var user models.User
+	//check if there is such a user in the database
 	ormResult := database.DatabaseConnector.First(&user, id)
 	if ormResult.Error == nil {
 		deleteResult := database.DatabaseConnector.Delete(&user, id)
