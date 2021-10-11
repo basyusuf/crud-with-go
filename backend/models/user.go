@@ -2,7 +2,7 @@ package models
 
 import (
 	"errors"
-	"main/app"
+	"main/public"
 
 	"github.com/badoux/checkmail"
 	"golang.org/x/crypto/bcrypt"
@@ -20,16 +20,16 @@ type User struct {
 
 type UserList []User
 
-func (u *User) ToPublic() app.User {
-	return app.User{
+func (u *User) ToPublic() public.User {
+	return public.User{
 		ID:    u.ID,
 		Name:  u.Name,
 		Email: u.Email,
 	}
 }
 
-func (list UserList) UserArrayToPublic() []app.User {
-	s := make([]app.User, 0, 5)
+func (list UserList) UserArrayToPublic() []public.User {
+	s := make([]public.User, 0, 5)
 	for _, value := range list {
 		s = append(s, value.ToPublic())
 	}

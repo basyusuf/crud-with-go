@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"main/app"
 	"main/database"
 	"main/models"
+	"main/public"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -18,7 +18,7 @@ import (
 func GetAllUser(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	var users []models.User
-	var errorResponse app.ErrorResponse
+	var errorResponse public.ErrorResponse
 	ormResult := database.DatabaseConnector.Find(&users)
 	if ormResult.Error != nil {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -37,7 +37,7 @@ func GetAllUser(writer http.ResponseWriter, req *http.Request) {
 func GetUserById(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(req)["id"]
-	var errorResponse app.ErrorResponse
+	var errorResponse public.ErrorResponse
 	var user models.User
 	//check if there is such a user in the database
 	ormResult := database.DatabaseConnector.First(&user, id)
@@ -61,7 +61,7 @@ func CreateUser(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	requestBody, _ := ioutil.ReadAll(req.Body)
 	var user models.User
-	var errorResponse app.ErrorResponse
+	var errorResponse public.ErrorResponse
 	json.Unmarshal(requestBody, &user)
 	//Input validation for create
 	validateStatus := user.ValidateFor(models.ValidationStatus.CREATE)
@@ -99,7 +99,7 @@ func CreateUser(writer http.ResponseWriter, req *http.Request) {
 
 func UpdateUser(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
-	var errorResponse app.ErrorResponse
+	var errorResponse public.ErrorResponse
 	id := mux.Vars(req)["id"]
 	var user models.User
 	//check if there is such a user in the database
@@ -149,7 +149,7 @@ func UpdateUser(writer http.ResponseWriter, req *http.Request) {
 func DeleteUser(writer http.ResponseWriter, req *http.Request) {
 	writer.Header().Set("Content-Type", "application/json")
 	id := mux.Vars(req)["id"]
-	var errorResponse app.ErrorResponse
+	var errorResponse public.ErrorResponse
 	var user models.User
 	//check if there is such a user in the database
 	ormResult := database.DatabaseConnector.First(&user, id)
