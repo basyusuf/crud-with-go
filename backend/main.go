@@ -8,13 +8,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var Router *mux.Router
+
 func main() {
 	database.Connect()
-	router := mux.NewRouter().StrictSlash(true)
+	Router = mux.NewRouter().StrictSlash(true)
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	routers.InitializeRouters(router, port)
+	routers.InitializeRouters(Router, port)
 
 }

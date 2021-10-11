@@ -26,13 +26,16 @@ func Connect() {
 	dbHost := os.Getenv("db_host")
 	dbPort := os.Getenv("db_port")
 
+	if username == "" || password == "" || dbName == "" || dbHost == "" || dbPort == "" {
+		panic("Env file cannot be left blank. Please check .env")
+	}
+
 	connectionString := fmt.Sprintf("postgres://%s/%s?sslmode=disable&user=%s&password=%s&port=%s", dbHost, dbName, username, password, dbPort)
-	//connectionString := "postgres://db/case_crud?sslmode=disable&user=postgres&password=postgres"
 	DatabaseConnector, err = gorm.Open(postgres.Open(connectionString), &gorm.Config{})
 	if err != nil {
 		fmt.Println(err.Error())
-		panic("Cannot connect to database! Please check credentials or database status")
+		panic("Cannot connect to database! Please check credentials or Database status")
 	}
-	log.Println("Connection was successful!")
+	log.Println("Database connection was successful!")
 	DatabaseConnector.AutoMigrate(&models.User{})
 }
