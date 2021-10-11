@@ -3,7 +3,7 @@ Crud with Go Language!
 
 # How to use
 - git clone this project
-- open the cloned folder on terminal
+- open the cloned folder on terminal and ```cd backend/```
 - run this command ```sudo docker-compose up```
 - check status, go to this url => ```localhost:8080```
 
