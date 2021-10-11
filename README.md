@@ -1,13 +1,24 @@
 # CRUD With GO!
-Crud with Go Language!
+CRUD with Go Language!
 
-# How to use
+# How to use with Docker-Compose
 - git clone this project
-- open the cloned folder on terminal and ```cd backend/```
+- open the cloned folder in the terminal and ```cd backend/```
 - run this command ```sudo docker-compose up```
 - check status, go to this url => ```localhost:8080```
 
+# How to use with your local
+- git clone this project
+- open the cloned folder in the terminal and ```cd backend/```
+- change db_host field value ```db``` to ```localhost``` in .env file
+- run this command ```go build && go run main```
+- check status, go to this url => ```localhost:8080```
 
+# Postman Documentation
+You can find the postman collection in the documentation folder.
+
+# Test
+You can test user model with this command ```go test -v ./models/```
 # Documentation
 ---
 
